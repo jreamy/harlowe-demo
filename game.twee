@@ -54,6 +54,8 @@ Pokemon battle
 </tr>
 </table>
 
+|battle_text>[]
+
 
 <!-- options -->
 (set: $choose_action to [{
@@ -121,14 +123,12 @@ Pokemon battle
     
     (replace: ?bt_my_image)[($battle_image: $bt_team's ($bt_active), "back")]
     (replace: ?bt_my_name)[(print: $mons's ($bt_team's ($bt_active)'s id)'s name)]
-    (replace: ?bt_my_level)[(print: $bt_team's ($bt_active)'s level)]
+    (replace: ?bt_my_level)[(print: " " + (str: $bt_team's ($bt_active)'s level))]
     (replace: ?bt_my_progress)[($battle_progress_bar: $bt_team's ($bt_active))]
     
     (output-data: [])
 }]))
 
-
-|battle_text>[]
 
 {
  (live: 50ms)[
@@ -140,8 +140,6 @@ Pokemon battle
 
 
 }
-
-
 
 
 :: battle round [startup] {"position":"900,300","size":"100,100"}
@@ -206,7 +204,9 @@ Pokemon battle
 }]))
 
 (set: $br_state_machine to (macro: [{
-  (if: $br_state is "init")[
+
+  <!-- battle intro text -->
+  (set: _br_init to (macro: [
     (set: $br_state to "done")
   
     (if: $bt_foe's opponent is "wild")[
@@ -214,8 +214,11 @@ Pokemon battle
     ](else:)[
       ($battle_print: ($bt_foe's opponent) + " would like to battle!")
     ]
-    
-  ](else-if: $br_state is "switch")[
+    (output-data: [])
+  ]))
+  
+  <!-- switching pokemon -->
+  (set: _br_switch to (macro: [
     (set: $bt_active to $br_switch)
     (set: $br_my to $bt_team's ($bt_active))
     (set: $br_my's "name" to $mons's ($br_my's id)'s name)
@@ -223,14 +226,25 @@ Pokemon battle
     
     (set: $br_state to "foe_turn")
     ($battle_print: "Go " + $br_my's name + "!")
-
-  ](else-if: $br_state is "my_turn")[
+    (output-data: [])
+  ]))
   
+  <!-- declare my move -->
+  (set: _br_my_turn to (macro: [
     (set: $br_state to "my_damage")
     ($battle_print: $br_my's name + " used " + $br_move's my + ".")
-    
-  ](else-if: $br_state is "my_damage")[
+    (output-data: [])
+  ]))
   
+  <!-- declare foe move -->
+  (set: _br_foe_turn to (macro: [
+    (set: $br_state to "foe_damage")
+    ($battle_print: "Foe " + $br_foe's name + " used " + $br_move's foe + ".")
+    (output-data: [])
+  ]))
+  
+  <!-- calculate my move's damage -->
+  (set: _br_my_damage to (macro: [
     (set: _multiplier to ($move_multiplier: $br_move's my, $br_foe))
     (set: _damage to (floor: $move_damage's ($br_move's my) * _multiplier * (random:90, 110) / 200))
     (set: _fainted to _damage >= $br_foe's hp)
@@ -259,13 +273,11 @@ Pokemon battle
     ](else:)[
       ($br_state_machine:)
     ]
+    (output-data: [])
+  ]))
   
-  ](else-if: $br_state is "foe_turn")[
-    (set: $br_state to "foe_damage")
-    ($battle_print: "Foe " + $br_foe's name + " used " + $br_move's foe + ".")
-
-  ](else-if: $br_state is "foe_damage")[
-  
+  <!-- calculate foe move's damage -->
+  (set: _br_foe_damage to (macro: [
     (set: _multiplier to ($move_multiplier: $br_move's foe, $br_my))
     (set: _damage to (floor: $move_damage's ($br_move's foe) * _multiplier * (random:90, 110) / 200))
     (set: _fainted to _damage >= $br_my's hp)
@@ -294,8 +306,26 @@ Pokemon battle
     ](else:)[
       ($br_state_machine:)
     ]
+    (output-data: [])
+  ]))
+  
+  <!-- my pokemon fainted -->
+  (set: _br_my_fainted to (macro:[
+   (set: _options to (find: _idx where $bt_team's (_idx)'s status is not "fainted", ...(range: 1, $bt_team's length)))
     
-  ](else-if: $br_state is "foe_fainted")[
+    (if: _options's length > 0)[
+      (set: $br_state to "done")
+      (set: $bt_active to _options's 1st)
+      ($battle_print: "Go " + $mons's ($bt_team's ($bt_active)'s id)'s name)
+    ](else:)[
+      (set: $br_state to "lost")
+      ($battle_print: "You ran out of usable pokemon.")
+    ]
+    (output-data: [])
+  ]))
+  
+  <!-- foe pokemon fainted -->
+  (set: _br_foe_fainted to (macro:[
     (set: _foe_options to (find: _idx where $bt_foe's team's (_idx)'s status is not "fainted", ...(range: 1, $bt_foe's team's length)))
     
     (if: _foe_options's length > 0)[
@@ -310,23 +340,41 @@ Pokemon battle
         ($br_state_machine:)
       ]
     ]
-  ](else-if: $br_state is "my_fainted")[
-  
-  (set: _options to (find: _idx where $bt_team's (_idx)'s status is not "fainted", ...(range: 1, $bt_team's length)))
+    (output-data: [])
+  ]))
+
+
+  <!-- state machine -->
+  (if: $br_state is "init")[
+    (_br_init:)
     
-    (if: _options's length > 0)[
-      (set: $br_state to "done")
-      (set: $bt_active to _options's 1st)
-      ($battle_print: "Go " + $mons's ($bt_team's ($bt_active)'s id)'s name)
-    ](else:)[
-      (set: $br_state to "lost")
-      ($battle_print: "You ran out of usable pokemon.")
-    ]
+  ](else-if: $br_state is "switch")[
+    (_br_switch:)
+
+  ](else-if: $br_state is "my_turn")[
+    (_br_my_turn:)
+    
+  ](else-if: $br_state is "my_damage")[
+    (_br_my_damage:)
+  
+  ](else-if: $br_state is "foe_turn")[
+    (_br_foe_turn:)
+
+  ](else-if: $br_state is "foe_damage")[
+    (_br_foe_damage:)
+    
+  ](else-if: $br_state is "foe_fainted")[
+    (_br_foe_fainted:)
+    
+  ](else-if: $br_state is "my_fainted")[
+    (_br_my_fainted:)
     
   ](else-if: $br_state is "won")[
     (output-data: [($battle_end:)])
+    
   ](else-if: $br_state is "lost")[
     (output-data: [($battle_end:)])
+    
   ](else:)[
     (replace: ?battle_text)[$choose_action]
    ]
@@ -345,33 +393,26 @@ Pokemon battle
 (set: $bt_ret to "start")
 
 (set: $bt_team to (a: (dm: 
-    	"id", 64,
-        "hp", 10,
-        "max_hp", 150,
-        "status", "none",
-        "level", 20,
-        "moves", (a: "psybeam", "quick attack"),
-    ), (dm: 
-    	"id", 129,
-        "hp", 75,
-        "max_hp", 100,
-        "status", "fainted",
-        "level", 15,
-        "moves", (a: "splash"),
-    ), (dm: 
     	"id", 25,
         "hp", 150,
         "max_hp", 150,
-        "status", "fainted",
+        "status", "none",
         "level", 20,
         "moves", (a: "thunder shock", "quick attack"),
     ), (dm: 
-    	"id", 25,
-        "hp", 0,
+    	"id", 1,
+        "hp", 100,
         "max_hp", 100,
-        "status", "fainted",
+        "status", "none",
         "level", 20,
-        "moves", (a: "thunder shock", "quick attack"),
+        "moves", (a: "razor leaf", "quick attack"),
+    ), (dm: 
+    	"id", 129,
+        "hp", 75,
+        "max_hp", 75,
+        "status", "none",
+        "level", 15,
+        "moves", (a: "splash"),
     ))
 )
 
@@ -437,6 +478,10 @@ Pokemon battle
 {
 
 (set: $mons to (dm:
+  1, (dm: 
+    "name", "Bulbasaur",
+    "type", "grass",
+  ),
   25, (dm: 
     "name", "Pikachu",
     "type", "electric",
@@ -463,6 +508,8 @@ Pokemon battle
   "rock tomb", 60,
   "tackle", 40,
   "quick attack", 40,
+  "thunder shock", 40,
+  "razor leaf", 55,
 ))
 
 (set: $move_types to (dm:
@@ -473,12 +520,15 @@ Pokemon battle
   "rock tomb", "ground",
   "tackle", "normal",
   "quick attack", "normal",
+  "thunder shock", "electric",
+  "razor leaf", "grass",
 ))
 
 (set: $move_effectiveness to (dm:
   "normal", (dm: "ground", .5),
   "water", (dm: "water", .5, "ground", 2),
   "electric", (dm: "water", 2, "electric", .5, "ground", 0),
+  "grass", (dm: "water", 2, "grass", .5, "ground", 2),
   "ground", (dm: "electric", 2),
   "psychic", (dm: "psychic", .5),
 ))
