@@ -77,7 +77,18 @@
 
 [[page 3]]
 
-(link: &quot;heal&quot;)[($heal:)]</tw-passagedata><tw-passagedata pid="5" name="battle" tags="" position="900,425" size="100,100">{
+(link: &quot;heal&quot;)[($heal:)(goto:&quot;start&quot;)]
+
+(link: &quot;use TM for hydro pump&quot;)[
+(set: _options to (find: _idx where $bt_team&#39;s (_idx)&#39;s id is 129, ...(range: 1, $bt_team&#39;s length)))
+(if: _options&#39;s length &gt; 0)[
+  (set: _idx to _options&#39;s 1st)
+  (if: not ($bt_team&#39;s (_idx)&#39;s moves contains &quot;hydro pump&quot;))[
+    (set: $bt_team&#39;s (_idx)&#39;s moves to $bt_team&#39;s (_idx)&#39;s moves + (a: &quot;hydro pump&quot;))
+  ]
+]
+(goto:&quot;start&quot;)
+]</tw-passagedata><tw-passagedata pid="5" name="battle" tags="" position="900,425" size="100,100">{
 
 &lt;!-- battle scene --&gt;
 &lt;table class=&quot;battle&quot;&gt;
@@ -203,28 +214,27 @@
 (set: $bt_ret to &quot;start&quot;)
 
 (set: $bt_team to (a: (dm: 
-    	&quot;id&quot;, 25,
-        &quot;hp&quot;, 150,
-        &quot;max_hp&quot;, 150,
-        &quot;status&quot;, &quot;none&quot;,
-        &quot;level&quot;, 20,
-        &quot;moves&quot;, (a: &quot;thunder shock&quot;, &quot;quick attack&quot;),
-    ), (dm: 
-    	&quot;id&quot;, 1,
-        &quot;hp&quot;, 100,
-        &quot;max_hp&quot;, 100,
-        &quot;status&quot;, &quot;none&quot;,
-        &quot;level&quot;, 20,
-        &quot;moves&quot;, (a: &quot;razor leaf&quot;, &quot;quick attack&quot;),
-    ), (dm: 
-    	&quot;id&quot;, 129,
-        &quot;hp&quot;, 75,
-        &quot;max_hp&quot;, 75,
-        &quot;status&quot;, &quot;none&quot;,
-        &quot;level&quot;, 15,
-        &quot;moves&quot;, (a: &quot;splash&quot;),
-    ))
-)
+  &quot;id&quot;, 25,
+  &quot;hp&quot;, 150,
+  &quot;max_hp&quot;, 150,
+  &quot;status&quot;, &quot;none&quot;,
+  &quot;level&quot;, 20,
+  &quot;moves&quot;, (a: &quot;thunder shock&quot;, &quot;quick attack&quot;),
+), (dm: 
+  &quot;id&quot;, 1,
+  &quot;hp&quot;, 100,
+  &quot;max_hp&quot;, 100,
+  &quot;status&quot;, &quot;none&quot;,
+  &quot;level&quot;, 20,
+  &quot;moves&quot;, (a: &quot;razor leaf&quot;, &quot;quick attack&quot;),
+), (dm: 
+  &quot;id&quot;, 129,
+  &quot;hp&quot;, 75,
+  &quot;max_hp&quot;, 75,
+  &quot;status&quot;, &quot;none&quot;,
+  &quot;level&quot;, 15,
+  &quot;moves&quot;, (a: &quot;splash&quot;),
+)))
 
 
 &lt;!-- battle_start --&gt;
@@ -313,6 +323,7 @@
   &quot;psybeam&quot;, 65,
   &quot;rock tomb&quot;, 60,
   &quot;tackle&quot;, 40,
+  &quot;hydro pump&quot;, 110,
   &quot;quick attack&quot;, 40,
   &quot;thunder shock&quot;, 40,
   &quot;razor leaf&quot;, 55,
@@ -325,6 +336,7 @@
   &quot;psybeam&quot;, &quot;psychic&quot;,
   &quot;rock tomb&quot;, &quot;ground&quot;,
   &quot;tackle&quot;, &quot;normal&quot;,
+  &quot;hydro pump&quot;, &quot;water&quot;,
   &quot;quick attack&quot;, &quot;normal&quot;,
   &quot;thunder shock&quot;, &quot;electric&quot;,
   &quot;razor leaf&quot;, &quot;grass&quot;,
