@@ -393,28 +393,27 @@ Pokemon battle
 (set: $bt_ret to "start")
 
 (set: $bt_team to (a: (dm: 
-    	"id", 25,
-        "hp", 150,
-        "max_hp", 150,
-        "status", "none",
-        "level", 20,
-        "moves", (a: "thunder shock", "quick attack"),
-    ), (dm: 
-    	"id", 1,
-        "hp", 100,
-        "max_hp", 100,
-        "status", "none",
-        "level", 20,
-        "moves", (a: "razor leaf", "quick attack"),
-    ), (dm: 
-    	"id", 129,
-        "hp", 75,
-        "max_hp", 75,
-        "status", "none",
-        "level", 15,
-        "moves", (a: "splash"),
-    ))
-)
+  "id", 25,
+  "hp", 150,
+  "max_hp", 150,
+  "status", "none",
+  "level", 20,
+  "moves", (a: "thunder shock", "quick attack"),
+), (dm: 
+  "id", 1,
+  "hp", 100,
+  "max_hp", 100,
+  "status", "none",
+  "level", 20,
+  "moves", (a: "razor leaf", "quick attack"),
+), (dm: 
+  "id", 129,
+  "hp", 75,
+  "max_hp", 75,
+  "status", "none",
+  "level", 15,
+  "moves", (a: "splash"),
+)))
 
 
 <!-- battle_start -->
@@ -507,6 +506,7 @@ Pokemon battle
   "psybeam", 65,
   "rock tomb", 60,
   "tackle", 40,
+  "hydro pump", 110,
   "quick attack", 40,
   "thunder shock", 40,
   "razor leaf", 55,
@@ -519,6 +519,7 @@ Pokemon battle
   "psybeam", "psychic",
   "rock tomb", "ground",
   "tackle", "normal",
+  "hydro pump", "water",
   "quick attack", "normal",
   "thunder shock", "electric",
   "razor leaf", "grass",
@@ -600,7 +601,18 @@ page 3
 
 [[page 3]]
 
-(link: "heal")[($heal:)]
+(link: "heal")[($heal:)(goto:"start")]
+
+(link: "use TM for hydro pump")[
+(set: _options to (find: _idx where $bt_team's (_idx)'s id is 129, ...(range: 1, $bt_team's length)))
+(if: _options's length > 0)[
+  (set: _idx to _options's 1st)
+  (if: not ($bt_team's (_idx)'s moves contains "hydro pump"))[
+    (set: $bt_team's (_idx)'s moves to $bt_team's (_idx)'s moves + (a: "hydro pump"))
+  ]
+]
+(goto:"start")
+]
 
 
 :: StoryStylesheet [stylesheet]
