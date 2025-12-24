@@ -113,6 +113,8 @@
 &lt;/tr&gt;
 &lt;/table&gt;
 
+|battle_text&gt;[]
+
 
 &lt;!-- options --&gt;
 (set: $choose_action to [{
@@ -180,14 +182,12 @@
     
     (replace: ?bt_my_image)[($battle_image: $bt_team&#39;s ($bt_active), &quot;back&quot;)]
     (replace: ?bt_my_name)[(print: $mons&#39;s ($bt_team&#39;s ($bt_active)&#39;s id)&#39;s name)]
-    (replace: ?bt_my_level)[(print: $bt_team&#39;s ($bt_active)&#39;s level)]
+    (replace: ?bt_my_level)[(print: &quot; &quot; + (str: $bt_team&#39;s ($bt_active)&#39;s level))]
     (replace: ?bt_my_progress)[($battle_progress_bar: $bt_team&#39;s ($bt_active))]
     
     (output-data: [])
 }]))
 
-
-|battle_text&gt;[]
 
 {
  (live: 50ms)[
@@ -198,40 +198,31 @@
 }
 
 
-}
-
-</tw-passagedata><tw-passagedata pid="6" name="battle setup" tags="startup" position="900,100" size="100,100">{
+}</tw-passagedata><tw-passagedata pid="6" name="battle setup" tags="startup" position="900,100" size="100,100">{
 &lt;!-- init --&gt;
 (set: $bt_ret to &quot;start&quot;)
 
 (set: $bt_team to (a: (dm: 
-    	&quot;id&quot;, 64,
-        &quot;hp&quot;, 10,
-        &quot;max_hp&quot;, 150,
-        &quot;status&quot;, &quot;none&quot;,
-        &quot;level&quot;, 20,
-        &quot;moves&quot;, (a: &quot;psybeam&quot;, &quot;quick attack&quot;),
-    ), (dm: 
-    	&quot;id&quot;, 129,
-        &quot;hp&quot;, 75,
-        &quot;max_hp&quot;, 100,
-        &quot;status&quot;, &quot;fainted&quot;,
-        &quot;level&quot;, 15,
-        &quot;moves&quot;, (a: &quot;splash&quot;),
-    ), (dm: 
     	&quot;id&quot;, 25,
         &quot;hp&quot;, 150,
         &quot;max_hp&quot;, 150,
-        &quot;status&quot;, &quot;fainted&quot;,
+        &quot;status&quot;, &quot;none&quot;,
         &quot;level&quot;, 20,
         &quot;moves&quot;, (a: &quot;thunder shock&quot;, &quot;quick attack&quot;),
     ), (dm: 
-    	&quot;id&quot;, 25,
-        &quot;hp&quot;, 0,
+    	&quot;id&quot;, 1,
+        &quot;hp&quot;, 100,
         &quot;max_hp&quot;, 100,
-        &quot;status&quot;, &quot;fainted&quot;,
+        &quot;status&quot;, &quot;none&quot;,
         &quot;level&quot;, 20,
-        &quot;moves&quot;, (a: &quot;thunder shock&quot;, &quot;quick attack&quot;),
+        &quot;moves&quot;, (a: &quot;razor leaf&quot;, &quot;quick attack&quot;),
+    ), (dm: 
+    	&quot;id&quot;, 129,
+        &quot;hp&quot;, 75,
+        &quot;max_hp&quot;, 75,
+        &quot;status&quot;, &quot;none&quot;,
+        &quot;level&quot;, 15,
+        &quot;moves&quot;, (a: &quot;splash&quot;),
     ))
 )
 
@@ -293,6 +284,10 @@
 }</tw-passagedata><tw-passagedata pid="7" name="data setup" tags="startup" position="800,100" size="100,100">{
 
 (set: $mons to (dm:
+  1, (dm: 
+    &quot;name&quot;, &quot;Bulbasaur&quot;,
+    &quot;type&quot;, &quot;grass&quot;,
+  ),
   25, (dm: 
     &quot;name&quot;, &quot;Pikachu&quot;,
     &quot;type&quot;, &quot;electric&quot;,
@@ -319,6 +314,8 @@
   &quot;rock tomb&quot;, 60,
   &quot;tackle&quot;, 40,
   &quot;quick attack&quot;, 40,
+  &quot;thunder shock&quot;, 40,
+  &quot;razor leaf&quot;, 55,
 ))
 
 (set: $move_types to (dm:
@@ -329,12 +326,15 @@
   &quot;rock tomb&quot;, &quot;ground&quot;,
   &quot;tackle&quot;, &quot;normal&quot;,
   &quot;quick attack&quot;, &quot;normal&quot;,
+  &quot;thunder shock&quot;, &quot;electric&quot;,
+  &quot;razor leaf&quot;, &quot;grass&quot;,
 ))
 
 (set: $move_effectiveness to (dm:
   &quot;normal&quot;, (dm: &quot;ground&quot;, .5),
   &quot;water&quot;, (dm: &quot;water&quot;, .5, &quot;ground&quot;, 2),
   &quot;electric&quot;, (dm: &quot;water&quot;, 2, &quot;electric&quot;, .5, &quot;ground&quot;, 0),
+  &quot;grass&quot;, (dm: &quot;water&quot;, 2, &quot;grass&quot;, .5, &quot;ground&quot;, 2),
   &quot;ground&quot;, (dm: &quot;electric&quot;, 2),
   &quot;psychic&quot;, (dm: &quot;psychic&quot;, .5),
 ))
@@ -400,7 +400,9 @@
 }]))
 
 (set: $br_state_machine to (macro: [{
-  (if: $br_state is &quot;init&quot;)[
+
+  &lt;!-- battle intro text --&gt;
+  (set: _br_init to (macro: [
     (set: $br_state to &quot;done&quot;)
   
     (if: $bt_foe&#39;s opponent is &quot;wild&quot;)[
@@ -408,8 +410,11 @@
     ](else:)[
       ($battle_print: ($bt_foe&#39;s opponent) + &quot; would like to battle!&quot;)
     ]
-    
-  ](else-if: $br_state is &quot;switch&quot;)[
+    (output-data: [])
+  ]))
+  
+  &lt;!-- switching pokemon --&gt;
+  (set: _br_switch to (macro: [
     (set: $bt_active to $br_switch)
     (set: $br_my to $bt_team&#39;s ($bt_active))
     (set: $br_my&#39;s &quot;name&quot; to $mons&#39;s ($br_my&#39;s id)&#39;s name)
@@ -417,14 +422,25 @@
     
     (set: $br_state to &quot;foe_turn&quot;)
     ($battle_print: &quot;Go &quot; + $br_my&#39;s name + &quot;!&quot;)
-
-  ](else-if: $br_state is &quot;my_turn&quot;)[
+    (output-data: [])
+  ]))
   
+  &lt;!-- declare my move --&gt;
+  (set: _br_my_turn to (macro: [
     (set: $br_state to &quot;my_damage&quot;)
     ($battle_print: $br_my&#39;s name + &quot; used &quot; + $br_move&#39;s my + &quot;.&quot;)
-    
-  ](else-if: $br_state is &quot;my_damage&quot;)[
+    (output-data: [])
+  ]))
   
+  &lt;!-- declare foe move --&gt;
+  (set: _br_foe_turn to (macro: [
+    (set: $br_state to &quot;foe_damage&quot;)
+    ($battle_print: &quot;Foe &quot; + $br_foe&#39;s name + &quot; used &quot; + $br_move&#39;s foe + &quot;.&quot;)
+    (output-data: [])
+  ]))
+  
+  &lt;!-- calculate my move&#39;s damage --&gt;
+  (set: _br_my_damage to (macro: [
     (set: _multiplier to ($move_multiplier: $br_move&#39;s my, $br_foe))
     (set: _damage to (floor: $move_damage&#39;s ($br_move&#39;s my) * _multiplier * (random:90, 110) / 200))
     (set: _fainted to _damage &gt;= $br_foe&#39;s hp)
@@ -453,13 +469,11 @@
     ](else:)[
       ($br_state_machine:)
     ]
+    (output-data: [])
+  ]))
   
-  ](else-if: $br_state is &quot;foe_turn&quot;)[
-    (set: $br_state to &quot;foe_damage&quot;)
-    ($battle_print: &quot;Foe &quot; + $br_foe&#39;s name + &quot; used &quot; + $br_move&#39;s foe + &quot;.&quot;)
-
-  ](else-if: $br_state is &quot;foe_damage&quot;)[
-  
+  &lt;!-- calculate foe move&#39;s damage --&gt;
+  (set: _br_foe_damage to (macro: [
     (set: _multiplier to ($move_multiplier: $br_move&#39;s foe, $br_my))
     (set: _damage to (floor: $move_damage&#39;s ($br_move&#39;s foe) * _multiplier * (random:90, 110) / 200))
     (set: _fainted to _damage &gt;= $br_my&#39;s hp)
@@ -488,8 +502,26 @@
     ](else:)[
       ($br_state_machine:)
     ]
+    (output-data: [])
+  ]))
+  
+  &lt;!-- my pokemon fainted --&gt;
+  (set: _br_my_fainted to (macro:[
+   (set: _options to (find: _idx where $bt_team&#39;s (_idx)&#39;s status is not &quot;fainted&quot;, ...(range: 1, $bt_team&#39;s length)))
     
-  ](else-if: $br_state is &quot;foe_fainted&quot;)[
+    (if: _options&#39;s length &gt; 0)[
+      (set: $br_state to &quot;done&quot;)
+      (set: $bt_active to _options&#39;s 1st)
+      ($battle_print: &quot;Go &quot; + $mons&#39;s ($bt_team&#39;s ($bt_active)&#39;s id)&#39;s name)
+    ](else:)[
+      (set: $br_state to &quot;lost&quot;)
+      ($battle_print: &quot;You ran out of usable pokemon.&quot;)
+    ]
+    (output-data: [])
+  ]))
+  
+  &lt;!-- foe pokemon fainted --&gt;
+  (set: _br_foe_fainted to (macro:[
     (set: _foe_options to (find: _idx where $bt_foe&#39;s team&#39;s (_idx)&#39;s status is not &quot;fainted&quot;, ...(range: 1, $bt_foe&#39;s team&#39;s length)))
     
     (if: _foe_options&#39;s length &gt; 0)[
@@ -504,23 +536,41 @@
         ($br_state_machine:)
       ]
     ]
-  ](else-if: $br_state is &quot;my_fainted&quot;)[
-  
-  (set: _options to (find: _idx where $bt_team&#39;s (_idx)&#39;s status is not &quot;fainted&quot;, ...(range: 1, $bt_team&#39;s length)))
+    (output-data: [])
+  ]))
+
+
+  &lt;!-- state machine --&gt;
+  (if: $br_state is &quot;init&quot;)[
+    (_br_init:)
     
-    (if: _options&#39;s length &gt; 0)[
-      (set: $br_state to &quot;done&quot;)
-      (set: $bt_active to _options&#39;s 1st)
-      ($battle_print: &quot;Go &quot; + $mons&#39;s ($bt_team&#39;s ($bt_active)&#39;s id)&#39;s name)
-    ](else:)[
-      (set: $br_state to &quot;lost&quot;)
-      ($battle_print: &quot;You ran out of usable pokemon.&quot;)
-    ]
+  ](else-if: $br_state is &quot;switch&quot;)[
+    (_br_switch:)
+
+  ](else-if: $br_state is &quot;my_turn&quot;)[
+    (_br_my_turn:)
+    
+  ](else-if: $br_state is &quot;my_damage&quot;)[
+    (_br_my_damage:)
+  
+  ](else-if: $br_state is &quot;foe_turn&quot;)[
+    (_br_foe_turn:)
+
+  ](else-if: $br_state is &quot;foe_damage&quot;)[
+    (_br_foe_damage:)
+    
+  ](else-if: $br_state is &quot;foe_fainted&quot;)[
+    (_br_foe_fainted:)
+    
+  ](else-if: $br_state is &quot;my_fainted&quot;)[
+    (_br_my_fainted:)
     
   ](else-if: $br_state is &quot;won&quot;)[
     (output-data: [($battle_end:)])
+    
   ](else-if: $br_state is &quot;lost&quot;)[
     (output-data: [($battle_end:)])
+    
   ](else:)[
     (replace: ?battle_text)[$choose_action]
    ]
