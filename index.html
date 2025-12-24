@@ -462,7 +462,7 @@
     (if: _fainted)[
       (set: $br_state to &quot;foe_fainted&quot;)
       ($battle_print: &quot;Foe &quot; + $br_foe&#39;s name + &quot; fainted!&quot;)
-    ](else-if: _multiplier &gt; 1)[
+    ](else-if: _multiplier &gt; 1 and _damage &gt; 1)[
       ($battle_print: &quot;It&#39;s super effective!&quot;)
     ](else-if: _multiplier &lt; 1)[
       ($battle_print: &quot;It&#39;s not very effective.&quot;)
@@ -495,7 +495,7 @@
     (if: _fainted)[
       (set: $br_state to &quot;my_fainted&quot;)
       ($battle_print: $br_my&#39;s name + &quot; fainted!&quot;)
-    ](else-if: _multiplier &gt; 1)[
+    ](else-if: _multiplier &gt; 1 and _damage &gt; 1)[
       ($battle_print: &quot;It&#39;s super effective!&quot;)
     ](else-if: _multiplier &lt; 1)[
       ($battle_print: &quot;It&#39;s not very effective.&quot;)
