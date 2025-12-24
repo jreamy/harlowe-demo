@@ -335,7 +335,7 @@ Pokemon battle
     ](else:)[
       (set: $br_state to "won")
       (if: $bt_foe's opponent is not "wild")[
-        ($battle_print: "Foe " + $bt_foe's opponent + " was defeated. You got " + $bt_foe's reward + ".")
+        ($battle_print: "Foe " + $bt_foe's opponent + " was defeated.")
       ](else:)[
         ($br_state_machine:)
       ]
